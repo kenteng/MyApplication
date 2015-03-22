@@ -6,9 +6,18 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Adapter;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.alibaba.fastjson.JSON;
 import com.kteng.weather.R;
+import com.kteng.weather.infos.DateInfo;
+import com.kteng.weather.infos.WeatherForecast;
+import com.kteng.weather.infos.WeatherInfo;
 import com.kteng.weather.util.XMLParser;
 
 import org.apache.http.HttpEntity;
@@ -21,46 +30,114 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 
-
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements AdapterView.OnItemSelectedListener{
 
     private Handler handler;
 
     private String weatherResult;
 
     private final int RESULT_TEXT = 1;
+
+    private Spinner provinceSpinner;
+
+    private Spinner citySpinner;
+
+    private Map<String,List<String>> stateMap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final TextView text_main = (TextView) findViewById(R.id.text_main);
+        final TextView weather = (TextView) findViewById(R.id.text_weather);
+        final TextView temp = (TextView) findViewById(R.id.text_temp);
+        final TextView wind = (TextView) findViewById(R.id.text_wind);
+        final TextView pm25 = (TextView) findViewById(R.id.text_pm25);
+
+        final TextView d1_date = (TextView) findViewById(R.id.d1_date);
+        final TextView d1_weather = (TextView) findViewById(R.id.d1_weather);
+        final TextView d1_temp = (TextView) findViewById(R.id.d1_temp);
+        final TextView d1_wind = (TextView) findViewById(R.id.d1_wind);
+
+        final TextView d2_date = (TextView) findViewById(R.id.d2_date);
+        final TextView d2_weather = (TextView) findViewById(R.id.d2_weather);
+        final TextView d2_temp = (TextView) findViewById(R.id.d2_temp);
+        final TextView d2_wind = (TextView) findViewById(R.id.d2_wind);
+
+        final TextView d3_date = (TextView) findViewById(R.id.d3_date);
+        final TextView d3_weather = (TextView) findViewById(R.id.d3_weather);
+        final TextView d3_temp = (TextView) findViewById(R.id.d3_temp);
+        final TextView d3_wind = (TextView) findViewById(R.id.d3_wind);
+
+        provinceSpinner = (Spinner) findViewById(R.id.spinner_province);
+        provinceSpinner.setOnItemSelectedListener(this);
+
+        citySpinner = (Spinner) findViewById(R.id.spinner_city);
+        citySpinner.setOnItemSelectedListener(this);
+
         handler = new Handler(){
             @Override
             public void handleMessage(Message message){
                 Bundle bundle = message.getData();
                 weatherResult = bundle.getString("weatherResult");
-                text_main.setText(weatherResult);
+
+                WeatherInfo weatherInfo = JSON.parseObject(weatherResult,WeatherInfo.class);
+                WeatherForecast forecast = weatherInfo.getWeatherForecast();
+                List<DateInfo> dateInfoList = forecast.getDateInfoList();
+                DateInfo today = dateInfoList.get(0);
+                weather.setText(today.getWeather());
+                wind.setText(today.getWind());
+                temp.setText(today.getTemperature());
+                pm25.setText(forecast.getPm25());
+
+                DateInfo d1 = dateInfoList.get(1);
+                d1_date.setText(d1.getDate());
+                d1_temp.setText(d1.getTemperature());
+                d1_weather.setText(d1.getWeather());
+                d1_wind.setText(d1.getWind());
+
+                DateInfo d2 = dateInfoList.get(2);
+                d2_date.setText(d2.getDate());
+                d2_temp.setText(d2.getTemperature());
+                d2_weather.setText(d2.getWeather());
+                d2_wind.setText(d2.getWind());
+
+                DateInfo d3 = dateInfoList.get(3);
+                d3_date.setText(d3.getDate());
+                d3_temp.setText(d3.getTemperature());
+                d3_weather.setText(d3.getWeather());
+                d3_wind.setText(d3.getWind());
             }
 
         };
-        getWeatherInfo();
         try {
             XMLParser xmlParser = new XMLParser(getResources().openRawResource(R.raw.cities));
-            xmlParser.parser();
+            stateMap = xmlParser.parser();
+
+            List<String> provinceList = new ArrayList<>();
+            provinceList.addAll(stateMap.keySet());
+            ArrayAdapter provinceAdapter = new ArrayAdapter(MainActivity.this,android.R.layout.select_dialog_item, provinceList);
+            provinceSpinner.setAdapter(provinceAdapter);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+
     }
 
 
-    private void getWeatherInfo(){
+
+    private void getWeatherInfo(final String cityName){
         new Thread(new Runnable() {
             @Override
             public void run() {
                 HttpClient httpClient = new DefaultHttpClient();
-                HttpGet httpGet = new HttpGet("http://api.map.baidu.com/telematics/v3/weather?location=%E9%95%87%E6%B1%9F&output=json&ak=LLVStL4Ejis8FjCK8BDHtFRR");
+                HttpGet httpGet = new HttpGet("http://api.map.baidu.com/telematics/v3/weather?location="+cityName+"&output=json&ak=LLVStL4Ejis8FjCK8BDHtFRR");
                 try {
                     HttpResponse response = httpClient.execute(httpGet);
                     if(response.getStatusLine().getStatusCode()==200){
@@ -100,5 +177,28 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        switch (parent.getId()){
+            case R.id.spinner_province:
+                String provinceName = parent.getItemAtPosition(position).toString();
+                List<String> cityList = stateMap.get(provinceName);
+                ArrayAdapter cityAdapter = new ArrayAdapter(MainActivity.this,android.R.layout.select_dialog_item, cityList);
+                citySpinner.setAdapter(cityAdapter);
+                break;
+            case R.id.spinner_city:
+                getWeatherInfo(parent.getItemAtPosition(position).toString());
+                break;
+            default:
+                break;
+
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
     }
 }

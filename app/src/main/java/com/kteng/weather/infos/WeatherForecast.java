@@ -16,6 +16,8 @@ public class WeatherForecast implements Serializable {
 
     private String[] index;
 
+    private JSONArray weather_data;
+
     public JSONArray getWeather_data() {
         return weather_data;
     }
@@ -23,8 +25,6 @@ public class WeatherForecast implements Serializable {
     public void setWeather_data(JSONArray weather_data) {
         this.weather_data = weather_data;
     }
-
-    private JSONArray weather_data;
 
     public String getCity() {
         return city;
