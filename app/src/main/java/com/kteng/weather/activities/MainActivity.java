@@ -10,12 +10,14 @@ import android.view.View;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.alibaba.fastjson.JSON;
 import com.kteng.weather.R;
 import com.kteng.weather.infos.DateInfo;
+import com.kteng.weather.infos.WeatherAdapter;
 import com.kteng.weather.infos.WeatherForecast;
 import com.kteng.weather.infos.WeatherInfo;
 import com.kteng.weather.util.XMLParser;
@@ -58,7 +60,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         final TextView wind = (TextView) findViewById(R.id.text_wind);
         final TextView pm25 = (TextView) findViewById(R.id.text_pm25);
 
-        final TextView d1_date = (TextView) findViewById(R.id.d1_date);
+        /*final TextView d1_date = (TextView) findViewById(R.id.d1_date);
         final TextView d1_weather = (TextView) findViewById(R.id.d1_weather);
         final TextView d1_temp = (TextView) findViewById(R.id.d1_temp);
         final TextView d1_wind = (TextView) findViewById(R.id.d1_wind);
@@ -71,13 +73,17 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         final TextView d3_date = (TextView) findViewById(R.id.d3_date);
         final TextView d3_weather = (TextView) findViewById(R.id.d3_weather);
         final TextView d3_temp = (TextView) findViewById(R.id.d3_temp);
-        final TextView d3_wind = (TextView) findViewById(R.id.d3_wind);
+        final TextView d3_wind = (TextView) findViewById(R.id.d3_wind);*/
 
         provinceSpinner = (Spinner) findViewById(R.id.spinner_province);
         provinceSpinner.setOnItemSelectedListener(this);
 
         citySpinner = (Spinner) findViewById(R.id.spinner_city);
         citySpinner.setOnItemSelectedListener(this);
+
+        final ListView weatherList = (ListView) findViewById(R.id.weather_list);
+
+
 
         handler = new Handler(){
             @Override
@@ -94,7 +100,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                 temp.setText(today.getTemperature());
                 pm25.setText(forecast.getPm25());
 
-                DateInfo d1 = dateInfoList.get(1);
+                /*DateInfo d1 = dateInfoList.get(1);
                 d1_date.setText(d1.getDate());
                 d1_temp.setText(d1.getTemperature());
                 d1_weather.setText(d1.getWeather());
@@ -110,7 +116,18 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                 d3_date.setText(d3.getDate());
                 d3_temp.setText(d3.getTemperature());
                 d3_weather.setText(d3.getWeather());
-                d3_wind.setText(d3.getWind());
+                d3_wind.setText(d3.getWind());*/
+
+
+                /*The context here could be use follow
+                * getBaseContext() / Activity.this / getApplicationContext()
+                * The difference is:
+                * getApplicationContext() 返回应用的上下文，生命周期是整个应用，应用摧毁它才摧毁
+                * Activity.this的context 返回当前activity的上下文，属于activity ，activity 摧毁他就摧毁
+                * getBaseContext()  返回由构造函数指定或setBaseContext()设置的上下文
+                * */
+                WeatherAdapter weatherAdapter = new WeatherAdapter(MainActivity.this,R.layout.weather_info,dateInfoList);
+                weatherList.setAdapter(weatherAdapter);
             }
 
         };
