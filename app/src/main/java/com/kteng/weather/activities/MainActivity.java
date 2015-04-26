@@ -1,16 +1,26 @@
 package com.kteng.weather.activities;
 
+import android.app.Activity;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.BaseColumns;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CursorAdapter;
+import android.widget.FilterQueryProvider;
 import android.widget.ListView;
+import android.widget.SearchView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -33,6 +43,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +62,11 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
 
     private Map<String,List<String>> stateMap;
 
+    private String[] testArray = {"aaaa","bbbb"};
+
+    private SharedPreferences sharedPreferences;
+
+    private SharedPreferences.Editor editor;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,22 +75,6 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         final TextView temp = (TextView) findViewById(R.id.text_temp);
         final TextView wind = (TextView) findViewById(R.id.text_wind);
         final TextView pm25 = (TextView) findViewById(R.id.text_pm25);
-
-        /*final TextView d1_date = (TextView) findViewById(R.id.d1_date);
-        final TextView d1_weather = (TextView) findViewById(R.id.d1_weather);
-        final TextView d1_temp = (TextView) findViewById(R.id.d1_temp);
-        final TextView d1_wind = (TextView) findViewById(R.id.d1_wind);
-
-        final TextView d2_date = (TextView) findViewById(R.id.d2_date);
-        final TextView d2_weather = (TextView) findViewById(R.id.d2_weather);
-        final TextView d2_temp = (TextView) findViewById(R.id.d2_temp);
-        final TextView d2_wind = (TextView) findViewById(R.id.d2_wind);
-
-        final TextView d3_date = (TextView) findViewById(R.id.d3_date);
-        final TextView d3_weather = (TextView) findViewById(R.id.d3_weather);
-        final TextView d3_temp = (TextView) findViewById(R.id.d3_temp);
-        final TextView d3_wind = (TextView) findViewById(R.id.d3_wind);*/
-
         provinceSpinner = (Spinner) findViewById(R.id.spinner_province);
         provinceSpinner.setOnItemSelectedListener(this);
 
@@ -82,6 +82,80 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         citySpinner.setOnItemSelectedListener(this);
 
         final ListView weatherList = (ListView) findViewById(R.id.weather_list);
+        //to store selected the province and city information.
+        sharedPreferences = getSharedPreferences("weather", Activity.MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+
+        try {
+            XMLParser xmlParser = new XMLParser(getResources().openRawResource(R.raw.cities));
+            stateMap = xmlParser.parser();
+            List<String> provinceList = new ArrayList<>();
+            provinceList.add("-----");
+            provinceList.addAll(stateMap.keySet());
+            ArrayAdapter provinceAdapter = new ArrayAdapter(MainActivity.this,android.R.layout.select_dialog_item, provinceList);
+            provinceSpinner.setAdapter(provinceAdapter);
+            if(sharedPreferences.contains("province")){
+                String province = sharedPreferences.getString("province","");
+                int index = getProvinceIndex(province);
+                provinceSpinner.setSelection(index,true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        final SearchView searchView = (SearchView) findViewById(R.id.searchView);
+        searchView.setQueryHint("Search for countries…");
+        /*Define the columns of a table.
+        *Must have the column "_id" otherwise will crash.
+        */
+        String[] tableCursor = new String[] {BaseColumns._ID,"city"};
+
+        /*MatrixCursor could simulate a table actually*/
+        final MatrixCursor matrixCursor = new MatrixCursor(tableCursor);
+        if(stateMap!=null){
+            int i = 0;
+            for(String province:stateMap.keySet()){
+                for(String city:stateMap.get(province)){
+                    i++;
+                    matrixCursor.addRow(new Object[]{i,city});
+                }
+            }
+        }
+
+        final String[] from = {"city"};
+        final int[] to = {R.id.textview};
+
+        //final SimpleCursorAdapter cursorAdapter = new SimpleCursorAdapter(this,android.R.layout.simple_list_item_1,matrixCursor,from,to);
+        final SimpleCursorAdapter cursorAdapter = new SimpleCursorAdapter(this,R.layout.searchtextview,matrixCursor,from,to);
+        //for SimpleCursorAdapter, better to implement the filter.
+        cursorAdapter.setFilterQueryProvider(new FilterQueryProvider() {
+            @Override
+            public Cursor runQuery(CharSequence constraint) {
+                //TODO
+                return null;
+            }
+        });
+
+        searchView.setSuggestionsAdapter(cursorAdapter);
+        searchView.setIconifiedByDefault(false);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                provinceSpinner.setSelection(getProvinceIndex(s));
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                if(TextUtils.isEmpty(s)){
+
+                }
+                else{
+                    cursorAdapter.getFilter().filter(s);
+                }
+                return true;
+            }
+        });
 
 
 
@@ -100,25 +174,6 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                 temp.setText(today.getTemperature());
                 pm25.setText(forecast.getPm25());
 
-                /*DateInfo d1 = dateInfoList.get(1);
-                d1_date.setText(d1.getDate());
-                d1_temp.setText(d1.getTemperature());
-                d1_weather.setText(d1.getWeather());
-                d1_wind.setText(d1.getWind());
-
-                DateInfo d2 = dateInfoList.get(2);
-                d2_date.setText(d2.getDate());
-                d2_temp.setText(d2.getTemperature());
-                d2_weather.setText(d2.getWeather());
-                d2_wind.setText(d2.getWind());
-
-                DateInfo d3 = dateInfoList.get(3);
-                d3_date.setText(d3.getDate());
-                d3_temp.setText(d3.getTemperature());
-                d3_weather.setText(d3.getWeather());
-                d3_wind.setText(d3.getWind());*/
-
-
                 /*The context here could be use follow
                 * getBaseContext() / Activity.this / getApplicationContext()
                 * The difference is:
@@ -131,24 +186,8 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
             }
 
         };
-        try {
-            XMLParser xmlParser = new XMLParser(getResources().openRawResource(R.raw.cities));
-            stateMap = xmlParser.parser();
-
-            List<String> provinceList = new ArrayList<>();
-            provinceList.addAll(stateMap.keySet());
-            ArrayAdapter provinceAdapter = new ArrayAdapter(MainActivity.this,android.R.layout.select_dialog_item, provinceList);
-            provinceSpinner.setAdapter(provinceAdapter);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
 
     }
-
-
-
     private void getWeatherInfo(final String cityName){
         new Thread(new Runnable() {
             @Override
@@ -173,7 +212,20 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
             }
         }).start();
     }
-
+    private int getProvinceIndex(String province){
+        int index = 0;
+        if(stateMap.containsKey(province)){
+            int tempIndex = 0; //the index mush starts from 0 not -1 since the stateMap does not contain the string "----"
+            for(String key : stateMap.keySet()){
+                tempIndex++;
+                if(key.equals(province)){
+                    index = tempIndex;
+                    break;
+                }
+            }
+        }
+        return index;
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -201,12 +253,25 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         switch (parent.getId()){
             case R.id.spinner_province:
                 String provinceName = parent.getItemAtPosition(position).toString();
-                List<String> cityList = stateMap.get(provinceName);
+                List<String> cityList;
+                /*Set to default string if province is selected as default.*/
+                if(provinceName.equals("-----")){
+                    cityList = Arrays.asList("-----");
+                }
+                else{
+                    cityList = stateMap.get(provinceName);
+                    editor.putString("province",provinceName);
+                }
                 ArrayAdapter cityAdapter = new ArrayAdapter(MainActivity.this,android.R.layout.select_dialog_item, cityList);
                 citySpinner.setAdapter(cityAdapter);
                 break;
             case R.id.spinner_city:
-                getWeatherInfo(parent.getItemAtPosition(position).toString());
+                String cityName = parent.getItemAtPosition(position).toString();
+                if(!cityName.equals("-----")){
+                    getWeatherInfo(cityName);
+                    editor.putString("city",cityName);
+                    editor.commit();
+                }
                 break;
             default:
                 break;

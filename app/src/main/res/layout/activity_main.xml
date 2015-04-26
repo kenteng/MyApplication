@@ -9,6 +9,23 @@
     android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context=".MainActivity">
 
+    <SearchView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textCapCharacters"
+        android:imeOptions="actionSearch"
+        android:id="@+id/searchView" />
+   <!-- <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/text_search"
+       />-->
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/queryList">
+
+    </ListView>
     <Spinner
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -8,6 +8,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,8 +17,6 @@ import java.util.Map;
  */
 public class XMLParser {
 
-    private Map<String,String> cityinfo = new HashMap<>();
-
     private InputStream inputStream;
 
     public XMLParser(InputStream inputStream){
@@ -25,7 +24,7 @@ public class XMLParser {
     }
 
     public Map<String,List<String>> parser(){
-        Map<String,List<String>> stateMaps = new HashMap<>();
+        Map<String,List<String>> stateMaps = new LinkedHashMap<>();
         XmlPullParser parser = Xml.newPullParser();
         try {
             parser.setInput(inputStream,"utf-8");
