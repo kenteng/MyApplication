@@ -108,7 +108,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         /*Define the columns of a table.
         *Must have the column "_id" otherwise will crash.
         */
-        String[] tableCursor = new String[] {BaseColumns._ID,"city"};
+        final String[] tableCursor = new String[] {BaseColumns._ID,"city"};
 
         /*MatrixCursor could simulate a table actually*/
         final MatrixCursor matrixCursor = new MatrixCursor(tableCursor);
@@ -125,14 +125,27 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         final String[] from = {"city"};
         final int[] to = {R.id.textview};
 
-        //final SimpleCursorAdapter cursorAdapter = new SimpleCursorAdapter(this,android.R.layout.simple_list_item_1,matrixCursor,from,to);
         final SimpleCursorAdapter cursorAdapter = new SimpleCursorAdapter(this,R.layout.searchtextview,matrixCursor,from,to);
-        //for SimpleCursorAdapter, better to implement the filter.
-        cursorAdapter.setFilterQueryProvider(new FilterQueryProvider() {
+        cursorAdapter.setFilterQueryProvider(new FilterQueryProvider() { //used to filter the suggestion list.
             @Override
             public Cursor runQuery(CharSequence constraint) {
-                //TODO
-                return null;
+                MatrixCursor _matrixCursor = matrixCursor;
+                if(constraint!=null){
+                    cursorAdapter.changeCursor(matrixCursor); //it is the full list at the beginning. Then start to filter.
+                    Cursor cursor = cursorAdapter.getCursor();
+                    _matrixCursor = new MatrixCursor(tableCursor); //init a new Cursor.
+                    int i = 0;
+                    cursor.moveToFirst();  // move to first.
+                    do{
+                        String cityName = cursor.getString(1);
+                        if(cityName.contains(constraint)){
+                            i++;
+                            _matrixCursor.addRow(new Object[]{i,cityName});
+                        }
+                    }while(cursor.moveToNext());
+                    return _matrixCursor;
+                }
+                return _matrixCursor;
             }
         });
 
@@ -141,22 +154,39 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String s) {
-                provinceSpinner.setSelection(getProvinceIndex(s));
                 return true;
             }
-
             @Override
             public boolean onQueryTextChange(String s) {
                 if(TextUtils.isEmpty(s)){
-
                 }
                 else{
-                    cursorAdapter.getFilter().filter(s);
+                    //cursorAdapter.getFilter().filter(s);
                 }
                 return true;
             }
         });
+        searchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+            @Override
+            public boolean onSuggestionSelect(int position) {
+                return false;
+            }
 
+            @Override
+            public boolean onSuggestionClick(int position) {
+                Cursor cursor = (Cursor) cursorAdapter.getItem(position);
+                String cityName = cursor.getString(1);
+
+                //set the selection of drop down list.
+                provinceSpinner.setSelection(getProvinceIndex(cityName));
+                citySpinner.setSelection(getCityIndex(cityName));
+
+                //send to query, it will jump into onQueryTextSubmit() in onQueryTextListener
+                searchView.setQuery(cityName,true);
+
+                return true;
+            }
+        });
 
 
         handler = new Handler(){
@@ -212,15 +242,29 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
             }
         }).start();
     }
-    private int getProvinceIndex(String province){
-        int index = 0;
-        if(stateMap.containsKey(province)){
-            int tempIndex = 0; //the index mush starts from 0 not -1 since the stateMap does not contain the string "----"
-            for(String key : stateMap.keySet()){
-                tempIndex++;
-                if(key.equals(province)){
-                    index = tempIndex;
-                    break;
+    private int getProvinceIndex(String name){
+        int index = 0; //the index mush starts from 0 not -1 since the stateMap does not contain the string "----"
+        for(String key : stateMap.keySet()){
+            index++;
+            if(key.equals(name)){ //name is a province name.
+                break;
+            }
+            if(stateMap.get(key).contains(name)){ //name is a city name.
+                break;
+            }
+        }
+        return index;
+    }
+
+    private int getCityIndex(String cityName){
+        int index = -1; //the index mush starts from 0 not -1 since the stateMap does not contain the string "----"
+        for(String key : stateMap.keySet()){
+            List<String> cityList = stateMap.get(key);
+            if(cityList.contains(cityName)){ //name is a city name.
+                for(String s:cityList){
+                    index++;
+                    if(s.equals(cityName))
+                        return index;
                 }
             }
         }
