@@ -16,5 +16,8 @@
             </intent-filter>
         </activity>
     </application>
+    <instrumentation
+        android:name="android.test.InstrumentationTestRunner"
+        android:targetPackage="com.kteng.weather"/>
 
 </manifest>
