@@ -18,7 +18,7 @@ import com.kteng.weather.activities.MainActivity;
  *  tips : if you get such error like "emulator: Failed to sync vcpu reg", make sure you do not have any
  *  virtual machine running. Close any vm like Genymotion and let avd to create the vm self.
  */
-public class testMainActivity extends InstrumentationTestCase{
+public class DemoInstrumentationTestCase extends InstrumentationTestCase{
     private MainActivity activity;
     private Spinner provinceSpinner;
     @Override
@@ -28,9 +28,12 @@ public class testMainActivity extends InstrumentationTestCase{
         } catch (Exception e) {
             e.printStackTrace();
         }
+        //The code below is actually same in InstrumentationTestCase and ActivityTestCase.
+        //It's the same Implementation in ActivityInstrumentTestCase2.getActivity()
         Intent intent = new Intent();
         intent.setClassName("com.kteng.weather", MainActivity.class.getName());
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); //TODO don't know why
+
         activity = (MainActivity) getInstrumentation().startActivitySync(intent);
         provinceSpinner = (Spinner) activity.findViewById(R.id.spinner_province);
     }
