@@ -34,10 +34,4 @@ public class DemoRobotium extends ActivityInstrumentationTestCase2<MainActivity>
         EditText queryText = solo.getEditText(0);
         solo.enterText(queryText,"上海");
     }
-
-    @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
-        solo.finishOpenedActivities();
-    }
 }
