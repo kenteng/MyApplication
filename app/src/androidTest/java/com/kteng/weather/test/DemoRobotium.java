@@ -2,12 +2,8 @@ package com.kteng.weather.test;
 
 import android.test.ActivityInstrumentationTestCase2;
 import android.widget.EditText;
-import android.widget.SearchView;
-import android.widget.TextView;
 
-import com.kteng.weather.R;
 import com.kteng.weather.activities.MainActivity;
-import com.robotium.solo.By;
 import com.robotium.solo.Solo;
 
 /**
@@ -26,6 +22,7 @@ public class DemoRobotium extends ActivityInstrumentationTestCase2<MainActivity>
     @Override
     public void setUp() throws Exception {
         super.setUp();
+
         activity = getActivity();
         solo = new Solo(getInstrumentation(),activity);
     }
